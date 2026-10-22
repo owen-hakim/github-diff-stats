@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "GitHub Diff Stats",
+  "version": "1.4.0",
+  "description": "Split pull request changes into code, tests (including inline Rust tests), and config files (including documentation).",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://github.com/*",
+    "https://patch-diff.githubusercontent.com/*",
+    "https://raw.githubusercontent.com/*"
+  ],
+  "background": {"service_worker": "background.js"},
+  "content_scripts": [{
+    "matches": ["https://github.com/*"],
+    "js": ["rust-tests.js", "stats.js", "content.js"],
+    "run_at": "document_idle"
+  }]
+}

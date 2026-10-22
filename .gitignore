@@ -1,0 +1,4 @@
+.DS_Store
+# Release packaging: the zip and its staging folder are built from extension/ and README.md.
+/github-diff-stats.zip
+/github-diff-stats/

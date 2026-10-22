@@ -1,0 +1,41 @@
+diff --git a/src/widget.js b/src/widget.js
+index 1111111..2222222 100644
+--- a/src/widget.js
++++ b/src/widget.js
+@@ -1,3 +1,4 @@
+ export function widget() {
+-  return 1;
++  const value = 2;
++  return value;
+ }
+diff --git a/tests/widget.test.js b/tests/widget.test.js
+new file mode 100644
+index 0000000..3333333
+--- /dev/null
++++ b/tests/widget.test.js
+@@ -0,0 +1,3 @@
++test('widget', () => {
++  assert.equal(widget(), 2);
++});
+diff --git a/src/old.js b/src/old.js
+deleted file mode 100644
+index 4444444..0000000
+--- a/src/old.js
++++ /dev/null
+@@ -1 +0,0 @@
+-old();
+\ No newline at end of file
+diff --git a/test_helper.py b/test_helper.py
+index 5555555..6666666 100644
+--- a/test_helper.py
++++ b/test_helper.py
+@@ -1 +1 @@
+---- looks like a header
+++++ also looks like a header
+diff --git a/docs/old name.md b/docs/new name.md
+similarity index 100%
+rename from docs/old name.md
+rename to docs/new name.md
+diff --git a/logo.png b/logo.png
+index 7777777..8888888 100644
+Binary files a/logo.png and b/logo.png differ
