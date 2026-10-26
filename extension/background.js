@@ -1,4 +1,6 @@
-importScripts("rust-tests.js", "stats.js");
+// Chrome runs this file as a service worker. Firefox has no extension service workers and loads
+// the manifest's background scripts in order instead.
+if (typeof importScripts === "function") importScripts("rust-tests.js", "stats.js");
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type !== "load-pr-diff") return;

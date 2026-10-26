@@ -4,20 +4,24 @@ const { join } = require("node:path");
 const { test } = require("node:test");
 const vm = require("node:vm");
 require("../extension/stats.js");
-const background = readFileSync(join(__dirname, "../extension/background.js"), "utf8");
+const manifest = JSON.parse(readFileSync(join(__dirname, "../extension/manifest.json"), "utf8"));
+const source = (file) => readFileSync(join(__dirname, "../extension", file), "utf8");
 const fixture = readFileSync(join(__dirname, "fixture.diff"), "utf8");
 
-function worker(fetch) {
+// Chrome runs the service worker, which imports its dependencies; Firefox has no importScripts
+// and loads the manifest's background scripts in order.
+function worker(fetch, browser = "chrome") {
   let listener;
-  const context = vm.createContext({
-    importScripts: () => {},
+  const globals = {
     chrome: { runtime: { id: "extension-id", onMessage: { addListener: (value) => { listener = value; } } } },
     URL, AbortSignal, fetch, Date, TextEncoder, TextDecoder, Uint8Array,
     crypto: require("node:crypto").webcrypto,
-  });
-  vm.runInContext(readFileSync(join(__dirname, "../extension/rust-tests.js"), "utf8"), context);
-  vm.runInContext(readFileSync(join(__dirname, "../extension/stats.js"), "utf8"), context);
-  vm.runInContext(background, context);
+  };
+  if (browser === "chrome") globals.importScripts = (...files) => { for (const file of files) vm.runInContext(source(file), context); };
+  const context = vm.createContext(globals);
+  for (const file of browser === "chrome" ? [manifest.background.service_worker] : manifest.background.scripts) {
+    vm.runInContext(source(file), context);
+  }
   return (sender, message = { type: "load-pr-diff" }) => new Promise((resolve) => listener(message, sender, resolve));
 }
 
@@ -39,6 +43,11 @@ test("worker fetches only the sender's PR, with session credentials, and returns
   assert.equal(result.files.length, 6);
   assert.equal(result.files[0].additions, 2);
   assert.equal(typeof result.loadedAt, "number");
+});
+
+test("Firefox background scripts load without importScripts and serve the sender's PR", async () => {
+  const result = await worker(async () => response(), "firefox")(sender);
+  assert.equal(result.files.length, 6);
 });
 
 test("worker refuses non-PR and foreign senders before making any network request", async () => {

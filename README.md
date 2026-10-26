@@ -1,11 +1,13 @@
 # GitHub Diff Stats
 
-A dependency-free Manifest V3 Chrome extension. Every GitHub pull request gets a
-panel with **Tests**, **Config**, and **Code**, in that order: added lines, deleted
-lines, total changed lines (additions + deletions), and changed files. GitHub's own
-total isn't duplicated.
+A dependency-free Manifest V3 extension for Chrome and Firefox, including Zen. Every
+GitHub pull request gets a panel with **Tests**, **Config**, and **Code**, in that
+order: added lines, deleted lines, total changed lines (additions + deletions), and
+changed files. GitHub's own total isn't duplicated.
 
 ## Install
+
+### Chrome
 
 1. Download `github-diff-stats.zip` from the latest release and unzip it, or clone
    this repository.
@@ -18,6 +20,20 @@ Keep the extension folder in place; Chrome loads its files from that location.
 No build, account, API token, or Chrome Web Store upload is needed. To update,
 replace the folder's contents with a newer release, then click the reload icon on
 the extension's card in `chrome://extensions`.
+
+### Firefox and Zen
+
+Download `github-diff-stats-firefox.xpi` from the latest release. It needs Firefox 128
+or later and isn't signed by Mozilla, so how you install it depends on the browser:
+
+- **Zen**, Firefox Developer Edition and Nightly allow unsigned add-ons. Open
+  `about:config` and set `xpinstall.signatures.required` to `false`. Then open
+  `about:addons`, click the gear, choose **Install Add-on From File…**, and pick the
+  `.xpi`. It stays installed across restarts. To update, install a newer `.xpi` the
+  same way.
+- **Firefox** (release) only accepts it as a temporary add-on: open
+  `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on…**, and pick
+  the `.xpi` (or `extension/manifest.json` in a clone). Firefox removes it when it quits.
 
 ## Layout
 
@@ -84,9 +100,11 @@ is left alone.
 
 The extension downloads the PR's `.diff` from the GitHub page using your existing
 GitHub session. If a redirect is blocked by browser cross-origin rules, the
-background worker retries with its raw-diff host permission. For modified Rust
-files it also reads GitHub's PR patch and full source at the patch's final commit,
-reconstructs the old version from the diff, and validates both Git blob hashes.
+background worker retries with its raw-diff host permission. Firefox always takes
+this route for public PRs, because GitHub's content security policy blocks the
+redirect for content scripts there. For modified Rust files it also reads GitHub's
+PR patch and full source at the patch's final commit, reconstructs the old version
+from the diff, and validates both Git blob hashes.
 Added/deleted Rust files are reconstructed directly from the diff. It never
 reads cookies through the cookies API or sends code to another service. Only
 test and config patterns and the collapsed-rail preference are persisted locally. Diff text is parsed in memory and discarded;
@@ -105,7 +123,8 @@ be detected from raw diff text, so these are counts of the downloaded diff, not
 an independent guarantee of repository-wide completeness. Private repository
 access depends on your existing session and your organization’s policies. A
 private diff redirected off GitHub can still be affected by Chrome's cookie
-restrictions. Self-hosted GitHub Enterprise is outside this extension's scope.
+restrictions. Private repositories haven't been tested in Firefox. Self-hosted
+GitHub Enterprise is outside this extension's scope.
 
 Rust detection recognizes explicit syntax rather than expanding macros or
 running a compiler. Tests generated entirely by macros, arbitrary `cfg_attr`
@@ -120,8 +139,9 @@ and [conditional-compilation reference](https://doc.rust-lang.org/reference/cond
 ## Verify
 
 From this directory, run `node --test tests/*.test.cjs`. Tests cover classification,
-diff parsing, malformed responses, request routing, authentication handling, and
-the upgrade of saved config defaults.
+diff parsing, malformed responses, request routing (including Firefox's
+background-script loading), authentication handling, and the upgrade of saved
+config defaults.
 The browser smoke test also covers the actual unpacked extension, the card, rail,
 overlay and strip layouts on full-width and centered pages, settings,
 navigation, stale responses, error display, dark mode, Rust inline tests with the
