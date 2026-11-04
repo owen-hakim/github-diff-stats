@@ -59,6 +59,7 @@ is left alone.
 - Click **Tests**, **Config**, or **Code** to list the files classified there, with
   each file's additions/deletions. **Code** contains the remaining changes after
   removing test, config and documentation changes.
+- Click a filename to jump to its diff on the **Files changed** tab.
 - Click the gear to edit **Classification patterns**. Test-file patterns: one glob per line;
   matching ignores case. `**/` also matches the repository root. Patterns support
   `*`, `**`, and `?`; braces and bracket expressions are literal characters.

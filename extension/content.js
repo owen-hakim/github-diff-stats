@@ -57,7 +57,7 @@
       * { box-sizing:border-box; } [hidden] { display:none !important; }
       .panel { display:grid; font:13px/1.5 var(--font); color:var(--fg); background:var(--bg); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
       button { font:inherit; color:inherit; cursor:pointer; }
-      button:focus-visible, textarea:focus-visible { outline:2px solid var(--focus); outline-offset:-2px; }
+      button:focus-visible, textarea:focus-visible, a:focus-visible { outline:2px solid var(--focus); outline-offset:-2px; }
       .icon-button { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; padding:0; color:var(--fg-muted); background:transparent; border:0; border-radius:6px; }
       .icon-button:hover, .toggle:hover, .metric:hover { background:var(--hover); color:var(--fg); }
       #refresh:disabled { cursor:progress; } #refresh:disabled svg, .panel.loading .status-icon svg { animation:spin 1s linear infinite; }
@@ -83,7 +83,7 @@
       .files { grid-area:files; display:flex; flex-direction:column; min-height:0; }
       .list-title { margin:0; color:var(--fg-muted); font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
       ul { list-style:none; margin:0; padding:0; overflow:auto; } li.empty { color:var(--fg-muted); }
-      .path { min-width:0; } .dir { color:var(--fg-muted); }
+      .path { min-width:0; color:inherit; text-decoration:none; } .path:hover { text-decoration:underline; } .dir { color:var(--fg-muted); }
       .badge { justify-self:end; padding:0 6px; font-size:11px; line-height:18px; color:var(--fg-muted); border:1px solid var(--border); border-radius:999px; white-space:nowrap; }
       .mini { display:none; } .file-counts { white-space:nowrap; text-align:right; font:12px/1.5 var(--mono); }
       .panel:not(.loaded) :is(.metrics, .meter, .files, .note, .updated, #files-toggle) { display:none !important; } .panel.loaded .status { display:none; }
@@ -230,7 +230,10 @@
     const row = document.createElement("li");
     row.title = file.path;
     const cut = file.path.lastIndexOf("/") + 1;
-    const path = node("span", "path");
+    const path = node("a", "path");
+    const pullRequest = pullRequestFromUrl(location.href);
+    path.href = `/${pullRequest.owner}/${pullRequest.repository}/pull/${pullRequest.number}/files#diff-${file.diffAnchor}`;
+    path.setAttribute("aria-label", file.path);
     path.append(node("span", "dir", file.path.slice(0, cut)), node("span", "name", file.path.slice(cut)));
     row.append(path);
     if (inline) row.append(node("span", "badge", "inline tests"));
@@ -312,7 +315,13 @@
       }
       if (requestGeneration !== generation) return;
       if (!result || result.error) throw new Error(result?.error || "No response from the extension. Reload this page.");
-      files = result.files;
+      const filesWithAnchors = await Promise.all(result.files.map(async (file) => {
+        const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(file.path));
+        const diffAnchor = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+        return { ...file, diffAnchor };
+      }));
+      if (requestGeneration !== generation) return;
+      files = filesWithAnchors;
       loadedAt = result.loadedAt;
       element("panel").className = "panel loaded";
       render();
