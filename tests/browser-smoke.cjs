@@ -22,7 +22,7 @@ const configDiff = fixture
   + rust.makeDiff('{"old": true}\n', '{"new": true}\n', "tests/fixture.json");
 const layoutPage = (content) => `<!doctype html><html data-color-mode="light" data-light-theme="light"><head><title>PR layout fixture</title></head><body style="margin:0;background:#fff"><main><div style="height:96px">Repository header</div><turbo-frame id="repo-content-turbo-frame" style="display:block"><div id="repo-content-pjax-container">${content}</div></turbo-frame></main></body></html>`;
 // GitHub's files tab spans the window; its conversation tab is centered at 1280px.
-const fullWidthPage = layoutPage('<div style="padding:24px 32px 0"><h1 style="margin:0">Full-width files tab</h1><div style="height:3000px"></div></div>');
+const fullWidthPage = layoutPage('<div style="padding:24px 32px 0"><h1 style="margin:0">Full-width files tab</h1><div style="height:1200px"></div><div id="diff-b2e7824aa96dc7ad1222d6a918b16741019545486e63b99884359596efcfc21d">src/widget.js</div><div style="height:1800px"></div></div>');
 const centeredPage = layoutPage('<div style="box-sizing:border-box;max-width:1280px;margin:0 auto;padding:24px 32px 0"><h1 style="margin:0">Centered conversation</h1><div style="height:3000px"></div></div>');
 const extension = resolve(__dirname, "../extension");
 const profile = mkdtempSync(join(tmpdir(), "github-diff-stats-browser-"));
@@ -310,6 +310,20 @@ new file mode 100644
     assert.equal(await mode(), "rail");
     assert.deepEqual(errors, []);
     console.log("Layout browser smoke passed: card, rail, overlay and strip modes; reserved margins on full-width and centered layouts; pinned while scrolling; persisted collapse.");
+
+    await page.setViewportSize({ width: 1920, height: 900 });
+    await page.goto("https://github.com/owner/repo/pull/48");
+    await metrics.waitFor({ state: "visible" });
+    await waitForMode("card");
+    const fileLink = panel.getByRole("link", { name: "src/widget.js" });
+    await fileLink.click({ timeout: 3000 });
+    await page.waitForURL("**/pull/48/files#diff-b2e7824aa96dc7ad1222d6a918b16741019545486e63b99884359596efcfc21d");
+    await metrics.waitFor({ state: "visible" });
+    await page.waitForFunction(() => scrollY > 500);
+    await page.evaluate(() => scrollTo(0, 0));
+    await panel.getByRole("link", { name: "src/widget.js" }).click();
+    await page.waitForFunction(() => scrollY > 500);
+    console.log("File navigation passed: from the conversation and within Files changed.");
 
     if (process.env.DIFF_STATS_LIVE_TEST === "1") {
       await context.unroute("https://github.com/**");

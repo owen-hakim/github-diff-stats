@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GitHub Diff Stats",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Split pull request changes into code, tests (including inline Rust tests), and config files (including documentation).",
   "permissions": ["storage"],
   "host_permissions": [
